@@ -71,7 +71,6 @@ data DBMState
 
 initDBMState :: IO DBMState
 initDBMState = do
-  liftIO $ print "create state"
   DBMState
     <$> newTVarIO (HMS.empty)
     <*> newTVarIO 0
