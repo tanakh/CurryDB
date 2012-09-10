@@ -66,6 +66,13 @@ executable kvs-cli
                      , network
                      , kvs
 
+test-suite kvs-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      dist
+  main-is:             ../test.hs
+  build-depends:       base
+                     , kvs
+
 benchmark kvs-bench
   type:                exitcode-stdio-1.0
   hs-source-dirs:      dist
