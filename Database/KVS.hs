@@ -25,6 +25,7 @@ import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.Base
 import           Control.Monad.State.Strict
+import           Control.Monad.Trans
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
 import qualified Data.ByteString.Char8        as S
@@ -63,15 +64,16 @@ instance MonadBaseControl b m => MonadBaseControl b (DBMT_ m) where
 
 data DBMState
   = DBMState
-    { _dbmTable      :: !(HMS.HashMap S.ByteString S.ByteString)
+    { _dbmTable      :: TVar (HMS.HashMap S.ByteString S.ByteString)
     , _dbmUpdates    :: TVar Int
     , _dbmLastUpdate :: TVar UTCTime
     }
 
 initDBMState :: IO DBMState
 initDBMState = do
+  liftIO $ print "create state"
   DBMState
-    <$> pure HMS.empty
+    <$> newTVarIO (HMS.empty)
     <*> newTVarIO 0
     <*> (newTVarIO =<< getCurrentTime)
 
@@ -82,31 +84,36 @@ runDBMT m = do
   st <- liftIO initDBMState
   evalStateT (runIdentityT $ unDBMT m) st
 
-insert :: (Functor m, Monad m) => S.ByteString -> S.ByteString -> DBMT m ()
+insert :: (Functor m, MonadIO m) => S.ByteString -> S.ByteString -> DBMT m ()
 insert key val = do
-  void $ dbmTable !%= HMS.insert key val
+  table <- access dbmTable
+  liftIO $ atomically $ modifyTVar' table $ HMS.insert key val
 {-# INLINE insert #-}
 
-insertWith :: (Functor m, Monad m)
+insertWith :: (Functor m, MonadIO m)
               => (S.ByteString -> S.ByteString -> S.ByteString)
               -> S.ByteString -> S.ByteString -> DBMT m ()
 insertWith f key val = do
-  void $ dbmTable !%= HMS.insertWith f key val
+  htvar <- access dbmTable
+  liftIO $ atomically $ modifyTVar' htvar $ HMS.insertWith f key val
 {-# INLINE insertWith #-}
 
-delete :: (Functor m, Monad m) => S.ByteString -> DBMT m ()
-delete key =
-  void $ dbmTable !%= HMS.delete key
+delete :: (Functor m, MonadIO m) => S.ByteString -> DBMT m ()
+delete key = do
+  htvar <- access dbmTable
+  liftIO $ atomically $ modifyTVar' htvar $ HMS.delete key
 {-# INLINE delete #-}
 
-lookup :: (Functor m, Monad m) => S.ByteString -> DBMT m (Maybe S.ByteString)
-lookup key =
-  HMS.lookup key <$> access dbmTable
+lookup :: (Functor m, MonadIO m) => S.ByteString -> DBMT m (Maybe S.ByteString)
+lookup key = do
+  htvar <- access dbmTable
+  liftIO $ HMS.lookup key <$> readTVarIO htvar
 {-# INLINE lookup #-}
 
-keys :: Monad m => Source (DBMT m) S.ByteString
+keys :: MonadIO m => Source (DBMT m) S.ByteString
 keys = do
-  ht <- lift $ access dbmTable
+  htvar <- lift $ access dbmTable
+  ht <- liftIO $ atomically $ readTVar htvar
   mapM_ yield $ HMS.keys ht
 
 transaction :: DBMT m a -> DBMT m a
