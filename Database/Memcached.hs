@@ -138,7 +138,7 @@ crlf = "\r\n"
 
 -----
 
-execCommand :: Command -> DBMT IO Response
+execCommand :: Command -> DBMT S.ByteString IO Response
 execCommand req = case req of
   Set key _flags _exptime val -> do
     KVS.insert key val

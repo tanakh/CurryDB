@@ -25,7 +25,6 @@ import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.Base
 import           Control.Monad.State.Strict
-import           Control.Monad.Trans
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
 import qualified Data.ByteString.Char8        as S
@@ -37,7 +36,7 @@ import           Data.Time
 
 import           Prelude                      hiding (lookup)
 
-type DBMT m = DBMT_ (StateT DBMState m)
+type DBMT v m = DBMT_ (StateT (DBMState v) m)
 
 newtype DBMT_ m a =
   DBMT_ { unDBMT :: IdentityT m a }
@@ -47,7 +46,7 @@ newtype DBMT_ m a =
     , MonadThrow, MonadResource
     )
 
-deriving instance MonadState DBMState m => MonadState DBMState (DBMT_ m)
+deriving instance MonadState (DBMState v) m => MonadState (DBMState v) (DBMT_ m)
 
 instance MonadTransControl DBMT_ where
   newtype StT DBMT_ a =
@@ -62,14 +61,14 @@ instance MonadBaseControl b m => MonadBaseControl b (DBMT_ m) where
   liftBaseWith = defaultLiftBaseWith StMT
   restoreM     = defaultRestoreM   unStMT
 
-data DBMState
+data DBMState v
   = DBMState
-    { _dbmTable      :: TVar (HMS.HashMap S.ByteString S.ByteString)
+    { _dbmTable      :: TVar (HMS.HashMap S.ByteString v)
     , _dbmUpdates    :: TVar Int
     , _dbmLastUpdate :: TVar UTCTime
     }
 
-initDBMState :: IO DBMState
+initDBMState :: IO (DBMState v)
 initDBMState = do
   DBMState
     <$> newTVarIO (HMS.empty)
@@ -78,42 +77,42 @@ initDBMState = do
 
 makeLens ''DBMState
 
-runDBMT :: MonadIO m => DBMT m a -> m a
+runDBMT :: MonadIO m => DBMT v m a -> m a
 runDBMT m = do
   st <- liftIO initDBMState
   evalStateT (runIdentityT $ unDBMT m) st
 
-insert :: (Functor m, MonadIO m) => S.ByteString -> S.ByteString -> DBMT m ()
+insert :: (Functor m, MonadIO m) => S.ByteString -> v -> DBMT v m ()
 insert key val = do
   table <- access dbmTable
   liftIO $ atomically $ modifyTVar' table $ HMS.insert key val
 {-# INLINE insert #-}
 
 insertWith :: (Functor m, MonadIO m)
-              => (S.ByteString -> S.ByteString -> S.ByteString)
-              -> S.ByteString -> S.ByteString -> DBMT m ()
+              => (v -> v -> v)
+              -> S.ByteString -> v -> DBMT v m ()
 insertWith f key val = do
   htvar <- access dbmTable
   liftIO $ atomically $ modifyTVar' htvar $ HMS.insertWith f key val
 {-# INLINE insertWith #-}
 
-delete :: (Functor m, MonadIO m) => S.ByteString -> DBMT m ()
+delete :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m ()
 delete key = do
   htvar <- access dbmTable
   liftIO $ atomically $ modifyTVar' htvar $ HMS.delete key
 {-# INLINE delete #-}
 
-lookup :: (Functor m, MonadIO m) => S.ByteString -> DBMT m (Maybe S.ByteString)
+lookup :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m (Maybe v)
 lookup key = do
   htvar <- access dbmTable
   liftIO $ HMS.lookup key <$> readTVarIO htvar
 {-# INLINE lookup #-}
 
-keys :: MonadIO m => Source (DBMT m) S.ByteString
+keys :: MonadIO m => Source (DBMT v m) S.ByteString
 keys = do
   htvar <- lift $ access dbmTable
   ht <- liftIO $ atomically $ readTVar htvar
   mapM_ yield $ HMS.keys ht
 
-transaction :: DBMT m a -> DBMT m a
+transaction :: DBMT v m a -> DBMT v m a
 transaction = id -- FIXME:

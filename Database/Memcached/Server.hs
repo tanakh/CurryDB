@@ -5,6 +5,7 @@ module Database.Memcached.Server (
 
 import           Blaze.ByteString.Builder
 import           Control.Monad.Trans
+import qualified Data.ByteString          as S
 import           Data.Conduit
 import           Data.Conduit.Attoparsec
 import           Data.Conduit.Network
@@ -16,7 +17,7 @@ import           Database.Memcached
 runServer :: ServerSettings -> IO ()
 runServer ss = withSocketsDo $ runDBMT $ runTCPServer ss server
 
-server :: Application (DBMT IO)
+server :: Application (DBMT S.ByteString IO)
 server src sink =
   src $$ conduitParser parseCommand =$ awaitForever p =$ sink
   where
