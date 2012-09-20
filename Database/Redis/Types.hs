@@ -16,11 +16,11 @@ import           Database.KVS
 type RedisT m = DBMT Value m
 
 data Value
-  = VString    S.ByteString
-  | VList      (Seq.Seq S.ByteString)
-  | VSet       (HS.HashSet S.ByteString)
-  | VHash      (HMS.HashMap S.ByteString S.ByteString)
-  | VSortedSet SortedSet
+  = VString    {-# UNPACK #-} !S.ByteString
+  | VList                     !(Seq.Seq S.ByteString)
+  | VSet                      !(HS.HashSet S.ByteString)
+  | VHash                     !(HMS.HashMap S.ByteString S.ByteString)
+  | VSortedSet {-# UNPACK #-} !SortedSet
 
 type Score = Int32
 
@@ -31,9 +31,9 @@ data Request
   deriving (Show)
 
 data Reply
-  = StatusReply S.ByteString
-  | ErrorReply S.ByteString
-  | IntReply Int
-  | BulkReply (Maybe S.ByteString)
-  | MultiBulkReply (Maybe [Maybe S.ByteString])
+  = StatusReply    {-# UNPACK #-} !S.ByteString
+  | ErrorReply     {-# UNPACK #-} !S.ByteString
+  | IntReply       {-# UNPACK #-} !Int
+  | BulkReply                     !(Maybe S.ByteString)
+  | MultiBulkReply                !(Maybe [Maybe S.ByteString])
   deriving (Show)

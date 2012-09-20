@@ -7,7 +7,7 @@ module Database.Redis.Commands (
   ) where
 
 import           Control.Applicative
-import           Control.Monad.Trans   (MonadIO)
+import           Control.Monad.Trans   (MonadIO, liftIO)
 import qualified Data.ByteString.Char8 as S
 import           Data.Conduit
 import qualified Data.Conduit.List     as CL
@@ -166,5 +166,7 @@ process = CL.mapM $ \(_pos_range, req) -> f req where
     Request ("SADD": key: vals) -> sadd key vals
     Request ["SPOP", key] -> spop key
 
-    _ -> return $ ErrorReply "Bad Request"
+    _ -> do
+      liftIO $ print req
+      return $ ErrorReply "Bad Request"
 {-# INLINE process #-}

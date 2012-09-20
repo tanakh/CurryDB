@@ -19,16 +19,19 @@ fromReply rep = case rep of
     fromByteString "-" <> fromByteString err <> crlf
   IntReply n ->
     fromByteString ":" <> fromString (show n) <> crlf
-  BulkReply Nothing ->
-    fromByteString "$-1" <> crlf
-  BulkReply (Just bs) ->
-    fromByteString "$" <> fromString (show $ S.length bs) <> crlf <>
-    fromByteString bs <> crlf
+  BulkReply mb ->
+    fromBulkReply mb
   MultiBulkReply Nothing ->
     fromByteString "*-1" <> crlf
   MultiBulkReply (Just bss) ->
     fromByteString "*" <> fromString (show $ length bss) <> crlf <>
-    mconcat [ fromReply (BulkReply bs) | bs <- bss ]
+    mconcat [ fromBulkReply bs | bs <- bss ]
   where
+    fromBulkReply Nothing =
+      fromByteString "$-1" <> crlf
+    fromBulkReply (Just bs) =
+      fromByteString "$" <> fromString (show $ S.length bs) <> crlf <>
+      fromByteString bs <> crlf
+
     crlf = fromByteString "\r\n"
 {-# INLINE fromReply #-}

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -85,7 +86,7 @@ runDBMT m = do
   evalStateT (runIdentityT $ unDBMT m) st
 
 insert :: (Functor m, MonadIO m) => S.ByteString -> v -> DBMT v m ()
-insert key val = do
+insert !key !val = do
   table <- access dbmTable
   liftIO $ atomically $ modifyTVar' table $ HMS.insert key val
 {-# INLINE insert #-}
@@ -93,26 +94,26 @@ insert key val = do
 insertWith :: (Functor m, MonadIO m)
               => (v -> v -> v)
               -> S.ByteString -> v -> DBMT v m ()
-insertWith f key val = do
+insertWith !f !key !val = do
   htvar <- access dbmTable
   liftIO $ atomically $ modifyTVar' htvar $ HMS.insertWith f key val
 {-# INLINE insertWith #-}
 
 delete :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m ()
-delete key = do
+delete !key = do
   htvar <- access dbmTable
   liftIO $ atomically $ modifyTVar' htvar $ HMS.delete key
 {-# INLINE delete #-}
 
 lookup :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m (Maybe v)
-lookup key = do
+lookup !key = do
   htvar <- access dbmTable
   liftIO $ HMS.lookup key <$> readTVarIO htvar
 {-# INLINE lookup #-}
 
 lookupDefault :: (Functor m, MonadIO m, Default v)
                  => S.ByteString -> DBMT v m v
-lookupDefault key = do
+lookupDefault !key = do
   htvar <- access dbmTable
   liftIO $ fromMaybe def . HMS.lookup key <$> readTVarIO htvar
 {-# INLINE lookupDefault #-}
