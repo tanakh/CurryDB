@@ -39,7 +39,6 @@ library
                    , attoparsec >=0.10
                    , attoparsec-conduit
                    , blaze-builder >=0.3
-                   , blaze-builder-conduit
                    , blaze-textual
                    , network >=2.4
                    , network-conduit
