@@ -11,7 +11,7 @@ import           Data.Int
 import qualified Data.Sequence       as Seq
 import qualified Data.Set            as Set
 
-import           Database.KVS
+import           Database.Curry
 
 type RedisT m = DBMT Value m
 

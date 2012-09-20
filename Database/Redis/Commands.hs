@@ -16,7 +16,7 @@ import qualified Data.HashSet          as HS
 import           Data.Maybe
 import qualified Data.Sequence         as Seq
 
-import           Database.KVS          as KVS
+import           Database.Curry          as Curry
 import           Database.Redis.Types
 
 type RedisCommand =
@@ -29,19 +29,19 @@ ping = return $ StatusReply "PONG"
 
 set :: S.ByteString -> S.ByteString -> RedisCommand
 set key val = do
-  KVS.insert key (VString val)
+  Curry.insert key (VString val)
   return replyOK
 
 mset :: [S.ByteString] -> RedisCommand
 mset ss = transaction $ go ss >> return replyOK where
   go (key: val: rest) = do
-    KVS.insert key (VString val)
+    Curry.insert key (VString val)
     go rest
   go _ = return ()
 
 get :: S.ByteString -> RedisCommand
 get key = do
-  x <- KVS.lookup key
+  x <- Curry.lookup key
   return $ case x of
     Just (VString val) -> BulkReply $ Just val
     Nothing -> BulkReply Nothing
@@ -53,13 +53,13 @@ decr = modInt pred
 
 modInt :: (Int -> Int) -> S.ByteString -> RedisCommand
 modInt f key = transaction $ do
-  x <- KVS.lookup key
+  x <- Curry.lookup key
   case x of
     Just (VString (toInt -> Just (f -> val))) -> do
-      KVS.insert key $ toVString val
+      Curry.insert key $ toVString val
       return $ IntReply val
     Nothing -> do
-      KVS.insert key $ toVString $ f 0
+      Curry.insert key $ toVString $ f 0
       return $ IntReply $ f 0
     Just (VString _) -> do
       return notIntErr
@@ -68,25 +68,25 @@ modInt f key = transaction $ do
 
 lpush :: S.ByteString -> [S.ByteString] -> RedisCommand
 lpush key vals = transaction $ do
-  x <- KVS.lookup key
+  x <- Curry.lookup key
   case x of
     Just (VList ls) -> do
-      KVS.insert key $ VList $ foldl' (\ys y -> y Seq.<| ys) ls vals
+      Curry.insert key $ VList $ foldl' (\ys y -> y Seq.<| ys) ls vals
       return $ IntReply $ Seq.length ls + length vals
     Nothing -> do
-      KVS.insert key $ VList $ foldl' (\ys y -> y Seq.<| ys) Seq.empty vals
+      Curry.insert key $ VList $ foldl' (\ys y -> y Seq.<| ys) Seq.empty vals
       return $ IntReply $ length vals
     _ ->
       return typeErr
 
 lpop :: S.ByteString -> RedisCommand
 lpop key = transaction $ do
-  x <- fromMaybe (VList Seq.empty) <$> KVS.lookup key
+  x <- fromMaybe (VList Seq.empty) <$> Curry.lookup key
   case x of
     VList ls -> do
       case Seq.viewl ls of
         val Seq.:< rest -> do
-          KVS.insert key $ VList rest
+          Curry.insert key $ VList rest
           return $ BulkReply $ Just val
         _ ->
           return $ BulkReply Nothing
@@ -95,7 +95,7 @@ lpop key = transaction $ do
 
 lrange :: S.ByteString -> S.ByteString -> S.ByteString -> RedisCommand
 lrange key sstart sstop = do
-  x <- fromMaybe (VList Seq.empty) <$> KVS.lookup key
+  x <- fromMaybe (VList Seq.empty) <$> Curry.lookup key
   case (x, toInt sstart, toInt sstop) of
     (VList ss, Just start, Just stop) -> do
       return
@@ -106,23 +106,23 @@ lrange key sstart sstop = do
 
 sadd :: S.ByteString -> [S.ByteString] -> RedisCommand
 sadd key vals = transaction $ do
-  x <- fromMaybe (VSet HS.empty) <$> KVS.lookup key
+  x <- fromMaybe (VSet HS.empty) <$> Curry.lookup key
   case x of
     VSet ss -> do
       let nss = foldl' (flip HS.insert) ss vals
-      KVS.insert key $ VSet nss
+      Curry.insert key $ VSet nss
       return $ IntReply $ HS.size nss - HS.size ss
     _ ->
       return typeErr
 
 spop :: S.ByteString -> RedisCommand
 spop key = transaction $ do
-  x <- fromMaybe (VSet HS.empty) <$> KVS.lookup key
+  x <- fromMaybe (VSet HS.empty) <$> Curry.lookup key
   case x of
     VSet ss -> do
       case HS.toList ss of
         (arb:_) -> do
-          KVS.insert key $ VSet $ HS.delete arb ss
+          Curry.insert key $ VSet $ HS.delete arb ss
           return $ BulkReply $ Just arb
         _ -> do
           return $ BulkReply Nothing

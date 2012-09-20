@@ -1,0 +1,81 @@
+name:                CurryDB
+version:             0.1.0.0
+synopsis:            CurryDB: Simple, Persistent, Transactional, In-memory Key/Value Database
+description:         CurryDB: Simple, Persistent, Transactional, In-memory Key/Value Database
+license:             BSD3
+license-file:        LICENSE
+author:              Hideyuki Tanaka
+maintainer:          Hideyuki Tanaka <tanaka.hideyuki@gmail.com>
+copyright:           (c) 2012, Hideyuki Tanaka
+category:            Database
+build-type:          Simple
+cabal-version:       >=1.8
+
+library
+  exposed-modules:   Database.Curry
+                     Database.Memcached
+                     Database.Memcached.Server
+                     Database.Redis
+                     Database.Redis.Builder
+                     Database.Redis.Commands
+                     Database.Redis.Parser
+                     Database.Redis.Types
+
+  build-depends:     base >=4.5
+                   , bytestring
+                   , mtl >=2.1
+                   , transformers >=0.3
+                   , transformers-base >=0.4
+                   , unordered-containers >=0.2.2
+                   , containers >=0.4
+                   , data-lens >= 2.10
+                   , data-lens-fd >= 2.0
+                   , data-lens-template >= 2.1
+                   , conduit >=0.5
+                   , time
+                   , stm >=2.4
+                   , monad-control >=0.3
+                   , text >= 0.10
+                   , attoparsec >=0.10
+                   , blaze-builder >=0.3
+                   , network >=2.4
+                   , network-conduit
+                   , attoparsec-conduit
+                   , blaze-builder-conduit
+                   , data-default >=0.5
+
+  ghc-prof-options:  -prof -auto-all
+
+executable curry-memcached
+  hs-source-dirs:      dist
+  main-is:             ../memcached.hs
+  build-depends:       base
+                     , network-conduit
+                     , CurryDB
+
+executable curry-redis
+  hs-source-dirs:      dist
+  main-is:             ../redis.hs
+  ghc-options:         -O3
+  build-depends:       base
+                     , network-conduit
+                     , ekg >=0.3.1
+                     , CurryDB
+
+test-suite curry-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      dist
+  main-is:             ../test.hs
+  build-depends:       base
+                     , CurryDB
+
+benchmark curry-bench
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      dist
+  main-is:             ../bench.hs
+  ghc-options:         -rtsopts -O2 -fllvm -prof -auto-all
+  build-depends:       base
+                     , bytestring
+                     , mtl >=2.1
+                     , mersenne-random-pure64
+                     , CurryDB

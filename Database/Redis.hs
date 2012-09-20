@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Database.Redis (
   runServer,
@@ -7,12 +8,12 @@ module Database.Redis (
 import           Data.Conduit
 import           Data.Conduit.Attoparsec (conduitParser)
 import           Data.Conduit.Blaze      (builderToByteStringFlush)
-import           Data.Conduit.Internal   (sourceToPipe, sinkToPipe)
+import           Data.Conduit.Internal   (sinkToPipe, sourceToPipe)
 import qualified Data.Conduit.List       as CL
 import           Data.Conduit.Network    (ServerSettings, runTCPServer)
 import           Network                 (withSocketsDo)
 
-import           Database.KVS
+import           Database.Curry
 import           Database.Redis.Builder
 import           Database.Redis.Commands
 import           Database.Redis.Parser

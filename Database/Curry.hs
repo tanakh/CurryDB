@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -7,7 +8,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Database.KVS (
+module Database.Curry (
   -- DBM monad
   DBMT,
   runDBMT,
@@ -30,12 +31,12 @@ import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
 import qualified Data.ByteString.Char8        as S
 import           Data.Conduit
+import           Data.Default
 import qualified Data.HashMap.Strict          as HMS
 import           Data.Lens
 import           Data.Lens.Template
+import           Data.Maybe
 import           Data.Time
-import Data.Default
-import Data.Maybe
 
 import           Prelude                      hiding (lookup)
 
@@ -72,9 +73,9 @@ data DBMState v
     }
 
 initDBMState :: IO (DBMState v)
-initDBMState = do
+initDBMState =
   DBMState
-    <$> newTVarIO (HMS.empty)
+    <$> newTVarIO HMS.empty
     <*> newTVarIO 0
     <*> (newTVarIO =<< getCurrentTime)
 

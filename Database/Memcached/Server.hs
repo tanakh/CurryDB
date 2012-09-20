@@ -11,7 +11,7 @@ import           Data.Conduit.Attoparsec
 import           Data.Conduit.Network
 import           Network                  (withSocketsDo)
 
-import           Database.KVS
+import           Database.Curry
 import           Database.Memcached
 
 runServer :: ServerSettings -> IO ()

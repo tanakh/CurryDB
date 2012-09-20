@@ -27,7 +27,7 @@ import           Data.Word
 import           Prelude                          hiding (lookup)
 import Data.Maybe
 
-import Database.KVS as KVS
+import Database.Curry as Curry
 
 -- protocol: <https://github.com/memcached/memcached/blob/master/doc/protocol.txt>
 
@@ -141,42 +141,42 @@ crlf = "\r\n"
 execCommand :: Command -> DBMT S.ByteString IO Response
 execCommand req = case req of
   Set key _flags _exptime val -> do
-    KVS.insert key val
+    Curry.insert key val
     return Stored
 
   Add key _flags _exptime val -> do
-    KVS.lookup key >>= \mb -> case mb of
+    Curry.lookup key >>= \mb -> case mb of
       Nothing -> do
-        KVS.insert key val
+        Curry.insert key val
         return Stored
       Just _ ->
         return NotStored
 
   Replace key _flags _exptime val -> do
-    KVS.lookup key >>= \mb -> case mb of
+    Curry.lookup key >>= \mb -> case mb of
       Nothing ->
         return NotStored
       Just _ -> do
-        KVS.insert key val
+        Curry.insert key val
         return Stored
 
   Append key _flags _exptime val -> do
-    KVS.insertWith (\new old -> old <> new) key val
+    Curry.insertWith (\new old -> old <> new) key val
     return Stored
 
   Prepend key _flags _exptime val -> do
-    KVS.insertWith (\new old -> new <> old) key val
+    Curry.insertWith (\new old -> new <> old) key val
     return Stored
 
   Get ks ->
-    Values . catMaybes . zipWith (\k v -> (k, ) <$> v) ks <$> mapM KVS.lookup ks
+    Values . catMaybes . zipWith (\k v -> (k, ) <$> v) ks <$> mapM Curry.lookup ks
 
   Delete key -> do
-    KVS.lookup key >>= \mb -> case mb of
+    Curry.lookup key >>= \mb -> case mb of
       Nothing ->
         return NotFound
       Just _ -> do
-        KVS.delete key
+        Curry.delete key
         return Deleted
 
   Incr key val -> incr key (+ val)
@@ -184,14 +184,14 @@ execCommand req = case req of
 
   where
     incr key f = transaction $ do
-      KVS.lookup key >>= \mb -> case mb of
+      Curry.lookup key >>= \mb -> case mb of
         Nothing ->
           return NotFound
         Just bs ->
           case S.readInt bs of
             Just (cur, "") -> do
               let next = S.pack $ show (f $ fromIntegral cur)
-              KVS.insert key next
+              Curry.insert key next
               return $ Value next
             _ ->
               return NotFound
