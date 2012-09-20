@@ -18,6 +18,11 @@ library
   exposed-modules:     Database.KVS
                        Database.Memcached
                        Database.Memcached.Server
+                       Database.Redis
+                       Database.Redis.Builder
+                       Database.Redis.Commands
+                       Database.Redis.Parser
+                       Database.Redis.Types
 
   build-depends:       base >=4.5
                      , bytestring
@@ -35,23 +40,27 @@ library
                      , text >= 0.10
                      , attoparsec >=0.10
                      , blaze-builder >=0.3
-                     , network >=2.3
+                     , network >=2.4
                      , network-conduit
                      , attoparsec-conduit
+                     , blaze-builder-conduit
+                     , containers
+
+  ghc-prof-options:    -prof -auto-all
 
 executable kvs-server
   hs-source-dirs:      dist
   main-is:             ../main.hs
-  -- other-modules:       
   build-depends:       base
-                     , bytestring
-                     , mtl
                      , network-conduit
-                     , conduit
-                     , attoparsec-conduit
-                     , network >=2.3
-                     , async >= 2.0
-                     , blaze-builder >=0.3
+                     , kvs
+
+executable kvs-redis
+  hs-source-dirs:      dist
+  main-is:             ../redis.hs
+  ghc-options:         -threaded -O3
+  build-depends:       base
+                     , network-conduit
                      , kvs
 
 executable kvs-cli
