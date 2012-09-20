@@ -59,9 +59,10 @@ executable kvs-server
 executable kvs-redis
   hs-source-dirs:      dist
   main-is:             ../redis.hs
-  ghc-options:         -threaded -O3
+  ghc-options:         -O3
   build-depends:       base
                      , network-conduit
+                     , ekg >=0.3.1
                      , kvs
 
 executable kvs-cli

@@ -2,6 +2,9 @@
 
 import Data.Conduit.Network
 import Database.Redis
+import System.Remote.Monitoring
 
 main :: IO ()
-main = runServer $ ServerSettings 3334 "*"
+main = do
+  forkServer "localhost" 8000
+  runServer $ ServerSettings 3334 "*"
