@@ -3,6 +3,7 @@
 
 module Database.Redis (
   runServer,
+  ServerSettings,
   ) where
 
 import           Data.Conduit
@@ -10,7 +11,7 @@ import           Data.Conduit.Attoparsec (conduitParser)
 import           Data.Conduit.Blaze      (builderToByteStringFlush)
 import           Data.Conduit.Internal   (sinkToPipe, sourceToPipe)
 import qualified Data.Conduit.List       as CL
-import           Data.Conduit.Network    (ServerSettings, runTCPServer)
+import           Data.Conduit.Network    (runTCPServer, ServerSettings(..))
 import           Network                 (withSocketsDo)
 
 import           Database.Curry
