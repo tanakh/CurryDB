@@ -5,8 +5,8 @@ module Database.Redis.Builder (
   ) where
 
 import           Blaze.ByteString.Builder
-import           Blaze.ByteString.Builder.Char8
-import qualified Data.ByteString                as S
+import           Blaze.Text
+import qualified Data.ByteString          as S
 import           Data.Monoid
 
 import           Database.Redis.Types
@@ -18,20 +18,24 @@ fromReply rep = case rep of
   ErrorReply err ->
     fromByteString "-" <> fromByteString err <> crlf
   IntReply n ->
-    fromByteString ":" <> fromString (show n) <> crlf
+    fromByteString ":" <> integral n <> crlf
   BulkReply mb ->
     fromBulkReply mb
   MultiBulkReply Nothing ->
     fromByteString "*-1" <> crlf
   MultiBulkReply (Just bss) ->
-    fromByteString "*" <> fromString (show $ length bss) <> crlf <>
-    mconcat [ fromBulkReply bs | bs <- bss ]
-  where
-    fromBulkReply Nothing =
-      fromByteString "$-1" <> crlf
-    fromBulkReply (Just bs) =
-      fromByteString "$" <> fromString (show $ S.length bs) <> crlf <>
-      fromByteString bs <> crlf
-
-    crlf = fromByteString "\r\n"
+    fromByteString "*" <> integral (length bss) <> crlf <>
+    mconcat (map fromBulkReply bss)
 {-# INLINE fromReply #-}
+
+fromBulkReply :: Maybe S.ByteString -> Builder
+fromBulkReply Nothing =
+  fromByteString "$-1" <> crlf
+fromBulkReply (Just bs) =
+  fromByteString "$" <> integral (S.length bs) <> crlf <>
+  fromByteString bs <> crlf
+{-# INLINE fromBulkReply #-}
+
+crlf :: Builder
+crlf = fromByteString "\r\n"
+{-# INLINE crlf #-}
