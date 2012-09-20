@@ -1,7 +1,12 @@
 *~
-dist/
+dist
+cabal-dev
 a.out
 *.aux
 *.hp
 *.prof
 *.ps
+*.o
+*.hi
+*.chi
+*.chs.h
