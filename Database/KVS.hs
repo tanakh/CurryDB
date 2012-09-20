@@ -14,7 +14,7 @@ module Database.KVS (
   -- DBM operations
   insert, insertWith,
   delete,
-  lookup,
+  lookup, lookupDefault,
   keys,
 
   transaction,
@@ -33,6 +33,8 @@ import qualified Data.HashMap.Strict          as HMS
 import           Data.Lens
 import           Data.Lens.Template
 import           Data.Time
+import Data.Default
+import Data.Maybe
 
 import           Prelude                      hiding (lookup)
 
@@ -107,6 +109,13 @@ lookup key = do
   htvar <- access dbmTable
   liftIO $ HMS.lookup key <$> readTVarIO htvar
 {-# INLINE lookup #-}
+
+lookupDefault :: (Functor m, MonadIO m, Default v)
+                 => S.ByteString -> DBMT v m v
+lookupDefault key = do
+  htvar <- access dbmTable
+  liftIO $ fromMaybe def . HMS.lookup key <$> readTVarIO htvar
+{-# INLINE lookupDefault #-}
 
 keys :: MonadIO m => Source (DBMT v m) S.ByteString
 keys = do

@@ -45,6 +45,7 @@ library
                      , attoparsec-conduit
                      , blaze-builder-conduit
                      , containers
+                     , data-default >=0.5
 
   ghc-prof-options:    -prof -auto-all
 

@@ -28,8 +28,7 @@ fromReply rep = case rep of
     fromByteString "*-1" <> crlf
   MultiBulkReply (Just bss) ->
     fromByteString "*" <> fromString (show $ length bss) <> crlf <>
-    mconcat [ fromReply (BulkReply bs) <> crlf | bs <- bss ]
+    mconcat [ fromReply (BulkReply bs) | bs <- bss ]
   where
     crlf = fromByteString "\r\n"
-
 {-# INLINE fromReply #-}

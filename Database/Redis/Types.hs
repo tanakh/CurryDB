@@ -6,6 +6,7 @@ module Database.Redis.Types (
 
 import qualified Data.ByteString     as S
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.HashSet        as HS
 import           Data.Int
 import qualified Data.Sequence       as Seq
 import qualified Data.Set            as Set
@@ -15,10 +16,10 @@ import           Database.KVS
 type RedisT m = DBMT Value m
 
 data Value
-  = VString S.ByteString
-  | VList (Seq.Seq S.ByteString)
-  | VSet (Set.Set S.ByteString)
-  | VHash (HMS.HashMap S.ByteString S.ByteString)
+  = VString    S.ByteString
+  | VList      (Seq.Seq S.ByteString)
+  | VSet       (HS.HashSet S.ByteString)
+  | VHash      (HMS.HashMap S.ByteString S.ByteString)
   | VSortedSet SortedSet
 
 type Score = Int32
