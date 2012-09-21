@@ -148,25 +148,23 @@ notIntErr = ErrorReply "ERR value is not an integer or out of range"
 -----
 
 process :: (Functor m, Applicative m, MonadIO m)
-           => GInfConduit (a, Request) (RedisT m) Reply
-process = CL.mapM $ \(_pos_range, req) -> f req where
-  f req = case req of
-    Request ["PING"] -> ping
+           => (a, Request) -> RedisT m Reply
+process (_pos, req)= case req of
+  Request ["PING"] -> ping
 
-    Request ["SET", key, val] -> set key val
-    Request ("MSET": args) -> mset args
-    Request ["GET", key] -> get key
-    Request ["INCR", key] -> incr key
-    Request ["DECR", key] -> decr key
+  Request ["SET", key, val] -> set key val
+  Request ("MSET": args) -> mset args
+  Request ["GET", key] -> get key
+  Request ["INCR", key] -> incr key
+  Request ["DECR", key] -> decr key
 
-    Request ("LPUSH": key: vals) -> lpush key vals
-    Request ["LPOP", key] -> lpop key
-    Request ["LRANGE", key, start, stop] -> lrange key start stop
+  Request ("LPUSH": key: vals) -> lpush key vals
+  Request ["LPOP", key] -> lpop key
+  Request ["LRANGE", key, start, stop] -> lrange key start stop
 
-    Request ("SADD": key: vals) -> sadd key vals
-    Request ["SPOP", key] -> spop key
+  Request ("SADD": key: vals) -> sadd key vals
+  Request ["SPOP", key] -> spop key
 
-    _ -> do
-      liftIO $ print req
-      return $ ErrorReply "Bad Request"
+  _ -> do
+    return $ ErrorReply "Bad Request"
 {-# INLINE process #-}

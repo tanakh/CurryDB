@@ -7,4 +7,4 @@ import System.Remote.Monitoring
 main :: IO ()
 main = do
   forkServer "localhost" 8000
-  runServer $ ServerSettings 3334 "*"
+  runServer $ ServerSettings 3335 "*"

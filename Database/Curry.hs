@@ -29,7 +29,7 @@ import           Control.Monad.Base
 import           Control.Monad.State.Strict
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
-import qualified Data.ByteString.Char8        as S
+import qualified Data.ByteString              as S
 import           Data.Conduit
 import           Data.Default
 import qualified Data.HashMap.Strict          as HMS
