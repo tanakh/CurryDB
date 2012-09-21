@@ -1,7 +1,7 @@
 name:                CurryDB
 version:             0.1.0.0
-synopsis:            CurryDB: Simple, Persistent, Transactional, In-memory Key/Value Database
-description:         CurryDB: Simple, Persistent, Transactional, In-memory Key/Value Database
+synopsis:            CurryDB: Simple, Persistent, Polymorphic, Transactional, In-memory Key/Value Database
+description:         CurryDB: Simple, Persistent, Polymorphic, Transactional, In-memory Key/Value Database
 license:             BSD3
 license-file:        LICENSE
 author:              Hideyuki Tanaka
