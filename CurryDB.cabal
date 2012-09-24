@@ -14,11 +14,13 @@ cabal-version:       >=1.8
 library
   exposed-modules:   Database.Curry
                      Database.Memcached
+                     Database.Memcached.Commands
                      Database.Memcached.Server
                      Database.Redis
                      Database.Redis.Builder
                      Database.Redis.Commands
                      Database.Redis.Parser
+                     Database.Redis.Server
                      Database.Redis.Types
 
   build-depends:     base >=4.5

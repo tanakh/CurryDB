@@ -12,7 +12,7 @@ import           Data.Conduit.Network
 import           Network                  (withSocketsDo)
 
 import           Database.Curry
-import           Database.Memcached
+import           Database.Memcached.Commands
 
 runServer :: ServerSettings -> IO ()
 runServer ss = withSocketsDo $ runDBMT $ runTCPServer ss server
