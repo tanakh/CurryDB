@@ -72,6 +72,10 @@ data DBMState v
     , _dbmLastUpdate :: TVar UTCTime
     }
 
+liftSTM :: STM a -> DBMT v STM a
+liftSTM = lift . lift
+{-# INLINE liftSTM #-}
+
 initDBMState :: IO (DBMState v)
 initDBMState =
   DBMState
@@ -86,44 +90,46 @@ runDBMT m = do
   st <- liftIO initDBMState
   evalStateT (runIdentityT $ unDBMT m) st
 
-insert :: (Functor m, MonadIO m) => S.ByteString -> v -> DBMT v m ()
+-----
+
+insert :: S.ByteString -> v -> DBMT v STM ()
 insert !key !val = do
   table <- access dbmTable
-  liftIO $ atomically $ modifyTVar' table $ HMS.insert key val
+  liftSTM $ modifyTVar' table $ HMS.insert key val
 {-# INLINE insert #-}
 
-insertWith :: (Functor m, MonadIO m)
-              => (v -> v -> v)
-              -> S.ByteString -> v -> DBMT v m ()
+insertWith :: (v -> v -> v) -> S.ByteString -> v -> DBMT v STM ()
 insertWith !f !key !val = do
   htvar <- access dbmTable
-  liftIO $ atomically $ modifyTVar' htvar $ HMS.insertWith f key val
+  liftSTM $ modifyTVar' htvar $ HMS.insertWith f key val
 {-# INLINE insertWith #-}
 
-delete :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m ()
+delete :: S.ByteString -> DBMT v STM ()
 delete !key = do
   htvar <- access dbmTable
-  liftIO $ atomically $ modifyTVar' htvar $ HMS.delete key
+  liftSTM $ modifyTVar' htvar $ HMS.delete key
 {-# INLINE delete #-}
 
-lookup :: (Functor m, MonadIO m) => S.ByteString -> DBMT v m (Maybe v)
+lookup :: S.ByteString -> DBMT v STM (Maybe v)
 lookup !key = do
   htvar <- access dbmTable
-  liftIO $ HMS.lookup key <$> readTVarIO htvar
+  liftSTM $ HMS.lookup key <$> readTVar htvar
 {-# INLINE lookup #-}
 
-lookupDefault :: (Functor m, MonadIO m, Default v)
-                 => S.ByteString -> DBMT v m v
+lookupDefault :: Default v => S.ByteString -> DBMT v STM v
 lookupDefault !key = do
   htvar <- access dbmTable
-  liftIO $ fromMaybe def . HMS.lookup key <$> readTVarIO htvar
+  liftSTM $ fromMaybe def . HMS.lookup key <$> readTVar htvar
 {-# INLINE lookupDefault #-}
 
-keys :: MonadIO m => Source (DBMT v m) S.ByteString
+keys :: Monad m => DBMT v STM (Source (DBMT v m) S.ByteString)
 keys = do
-  htvar <- lift $ access dbmTable
-  ht <- liftIO $ atomically $ readTVar htvar
-  mapM_ yield $ HMS.keys ht
+  htvar <- access dbmTable
+  ht <- liftSTM $ readTVar htvar
+  return $ mapM_ yield $ HMS.keys ht
+{-# INLINE keys #-}
 
-transaction :: DBMT v m a -> DBMT v m a
-transaction = id -- FIXME:
+transaction :: MonadIO m => DBMT v STM a -> DBMT v m a
+transaction =
+  DBMT_ . IdentityT . mapStateT (liftIO . atomically) . runIdentityT . unDBMT
+{-# INLINE transaction #-}

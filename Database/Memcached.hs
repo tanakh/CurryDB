@@ -139,7 +139,7 @@ crlf = "\r\n"
 -----
 
 execCommand :: Command -> DBMT S.ByteString IO Response
-execCommand req = case req of
+execCommand req = transaction $ case req of
   Set key _flags _exptime val -> do
     Curry.insert key val
     return Stored
@@ -183,7 +183,7 @@ execCommand req = case req of
   Decr key val -> incr key (subtract val)
 
   where
-    incr key f = transaction $ do
+    incr key f = do
       Curry.lookup key >>= \mb -> case mb of
         Nothing ->
           return NotFound

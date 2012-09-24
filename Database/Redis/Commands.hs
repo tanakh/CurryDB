@@ -7,21 +7,18 @@ module Database.Redis.Commands (
   ) where
 
 import           Control.Applicative
-import           Control.Monad.Trans   (MonadIO, liftIO)
-import qualified Data.ByteString.Char8 as S
-import           Data.Conduit
-import qualified Data.Conduit.List     as CL
+import           Control.Concurrent.STM
+import           Control.Monad.Trans    (MonadIO)
+import qualified Data.ByteString.Char8  as S
 import           Data.Foldable
-import qualified Data.HashSet          as HS
+import qualified Data.HashSet           as HS
 import           Data.Maybe
-import qualified Data.Sequence         as Seq
+import qualified Data.Sequence          as Seq
 
-import           Database.Curry          as Curry
+import           Database.Curry         as Curry
 import           Database.Redis.Types
 
-type RedisCommand =
-  forall m. (Functor m, Applicative m, MonadIO m)
-  => RedisT m Reply
+type RedisCommand = RedisT STM Reply
 
 ping :: RedisCommand
 ping = return $ StatusReply "PONG"
@@ -33,7 +30,7 @@ set key val = do
   return replyOK
 
 mset :: [S.ByteString] -> RedisCommand
-mset ss = transaction $ go ss >> return replyOK where
+mset ss = go ss >> return replyOK where
   go (key: val: rest) = do
     Curry.insert key (VString val)
     go rest
@@ -52,7 +49,7 @@ incr = modInt succ
 decr = modInt pred
 
 modInt :: (Int -> Int) -> S.ByteString -> RedisCommand
-modInt f key = transaction $ do
+modInt f key = do
   x <- Curry.lookup key
   case x of
     Just (VString (toInt -> Just (f -> val))) -> do
@@ -67,7 +64,7 @@ modInt f key = transaction $ do
       return typeErr
 
 lpush :: S.ByteString -> [S.ByteString] -> RedisCommand
-lpush key vals = transaction $ do
+lpush key vals = do
   x <- Curry.lookup key
   case x of
     Just (VList ls) -> do
@@ -80,7 +77,7 @@ lpush key vals = transaction $ do
       return typeErr
 
 lpop :: S.ByteString -> RedisCommand
-lpop key = transaction $ do
+lpop key = do
   x <- fromMaybe (VList Seq.empty) <$> Curry.lookup key
   case x of
     VList ls -> do
@@ -105,7 +102,7 @@ lrange key sstart sstop = do
       return typeErr
 
 sadd :: S.ByteString -> [S.ByteString] -> RedisCommand
-sadd key vals = transaction $ do
+sadd key vals = do
   x <- fromMaybe (VSet HS.empty) <$> Curry.lookup key
   case x of
     VSet ss -> do
@@ -116,7 +113,7 @@ sadd key vals = transaction $ do
       return typeErr
 
 spop :: S.ByteString -> RedisCommand
-spop key = transaction $ do
+spop key = do
   x <- fromMaybe (VSet HS.empty) <$> Curry.lookup key
   case x of
     VSet ss -> do
@@ -149,7 +146,7 @@ notIntErr = ErrorReply "ERR value is not an integer or out of range"
 
 process :: (Functor m, Applicative m, MonadIO m)
            => (a, Request) -> RedisT m Reply
-process (_pos, req)= case req of
+process (_pos, req)= transaction $ case req of
   Request ["PING"] -> ping
 
   Request ["SET", key, val] -> set key val
