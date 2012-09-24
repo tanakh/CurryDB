@@ -22,7 +22,6 @@ type RedisCommand = RedisT STM Reply
 
 ping :: RedisCommand
 ping = return $ StatusReply "PONG"
-{-# INLINE ping #-}
 
 set :: S.ByteString -> S.ByteString -> RedisCommand
 set key val = do
