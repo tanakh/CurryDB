@@ -15,7 +15,7 @@ import           Database.Curry
 import           Database.Memcached.Commands
 
 runServer :: ServerSettings -> IO ()
-runServer ss = withSocketsDo $ runDBMT $ runTCPServer ss server
+runServer ss = withSocketsDo $ runDBMT def $ runTCPServer ss server
 
 server :: Application (DBMT S.ByteString IO)
 server src sink =

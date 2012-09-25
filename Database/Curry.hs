@@ -14,6 +14,10 @@ module Database.Curry (
   DBMT,
   runDBMT,
 
+  -- Configuration
+  Config(..), def,
+  SaveStrategy(..),
+
   -- DBM operations
   insert, insertWith,
   delete,
@@ -24,6 +28,7 @@ module Database.Curry (
   ) where
 
 import           Control.Applicative
+import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.Base
@@ -39,9 +44,11 @@ import           Data.Lens
 import           Data.Lens.Template
 import           Data.Maybe
 import           Data.Time
+import qualified Filesystem.Path              as FP
 import           Language.Haskell.TH.Syntax   (Loc (..))
 import           System.IO
 import           System.Log.FastLogger
+import Control.Concurrent (threadDelay)
 
 import           Prelude                      hiding (lookup)
 
@@ -90,26 +97,59 @@ data DBMState v
     , _dbmUpdates    :: TVar Int
     , _dbmLastUpdate :: TVar UTCTime
     , _dbmLogger     :: Logger
+    , _dbmConfig     :: Config
+    }
+
+data Config
+  = Config
+    { configPath         :: Maybe FP.FilePath
+    , configSaveStrategy :: [SaveStrategy]
+    , configVerbosity    :: LogLevel
+    }
+
+data SaveStrategy
+  = SaveByFrequency
+    { freqSecond  :: Int
+    , freqUpdates :: Int
+    }
+
+makeLens ''DBMState
+
+instance Default Config where
+  def = Config
+    { configPath = Nothing
+    , configSaveStrategy = []
+    , configVerbosity = LevelInfo
     }
 
 liftSTM :: STM a -> DBMT v STM a
 liftSTM = lift . lift
 {-# INLINE liftSTM #-}
 
-initDBMState :: IO (DBMState v)
-initDBMState =
+initDBMState :: Config -> IO (DBMState v)
+initDBMState conf =
   DBMState
     <$> newTVarIO HMS.empty
     <*> newTVarIO 0
     <*> (newTVarIO =<< getCurrentTime)
     <*> mkLogger True stdout
+    <*> pure conf
 
-makeLens ''DBMState
+runDBMT :: (MonadIO m, MonadBaseControl IO m)
+           => Config -> DBMT v m a -> m a
+runDBMT conf m = do
+  st <- liftIO $ initDBMState conf
+  (`evalStateT` st) $ runIdentityT $ unDBMT $ control $ \run -> do
+    _ <- async $ run saveThread
+    run m
 
-runDBMT :: MonadIO m => DBMT v m a -> m a
-runDBMT m = do
-  st <- liftIO initDBMState
-  evalStateT (runIdentityT $ unDBMT m) st
+-----
+
+saveThread :: MonadIO m => DBMT v m a
+saveThread = forever $ ((liftIO . threadDelay $ 10^(6::Int)) >>) $ do
+  -- $logInfo "polling"
+  -- TODO: implement it
+  return ()
 
 -----
 

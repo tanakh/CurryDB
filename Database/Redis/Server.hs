@@ -4,7 +4,8 @@
 
 module Database.Redis.Server (
   runServer,
-  ServerSettings,
+  ServerSettings(..),
+  def,
   ) where
 
 import           Blaze.ByteString.Builder
@@ -22,8 +23,8 @@ import           Database.Redis.Builder
 import           Database.Redis.Commands
 import           Database.Redis.Parser
 
-runServer :: ServerSettings -> IO ()
-runServer ss = withSocketsDo $ runDBMT $ runTCPServer ss $ \src sink -> do
+runServer :: Config -> ServerSettings -> IO ()
+runServer conf ss = withSocketsDo $ runDBMT conf $ runTCPServer ss $ \src sink -> do
   runPipe
     $   sourceToPipe src
     >+> injectLeftovers (conduitParser parseRequest)

@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Conduit.Network
 import Database.Redis
-import System.Remote.Monitoring
+import System.Remote.Monitoring (forkServer)
 
 main :: IO ()
 main = do
   forkServer "localhost" 8000
-  runServer $ ServerSettings 3335 "*"
+  runServer def $ ServerSettings 8854 "*"

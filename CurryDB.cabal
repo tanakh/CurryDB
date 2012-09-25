@@ -48,6 +48,8 @@ library
                    , monad-logger >=0.2
                    , fast-logger >=0.3
                    , template-haskell
+                   , system-filepath >=0.4.7
+                   , async >=2.0
 
   ghc-prof-options:  -prof -auto-all
 
