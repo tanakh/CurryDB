@@ -45,6 +45,9 @@ library
                    , network >=2.4
                    , network-conduit
                    , data-default >=0.5
+                   , monad-logger >=0.2
+                   , fast-logger >=0.3
+                   , template-haskell
 
   ghc-prof-options:  -prof -auto-all
 

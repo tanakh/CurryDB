@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -26,6 +27,7 @@ import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.Base
+import           Control.Monad.Logger
 import           Control.Monad.State.Strict
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
@@ -37,6 +39,9 @@ import           Data.Lens
 import           Data.Lens.Template
 import           Data.Maybe
 import           Data.Time
+import           Language.Haskell.TH.Syntax   (Loc (..))
+import           System.IO
+import           System.Log.FastLogger
 
 import           Prelude                      hiding (lookup)
 
@@ -65,11 +70,26 @@ instance MonadBaseControl b m => MonadBaseControl b (DBMT_ m) where
   liftBaseWith = defaultLiftBaseWith StMT
   restoreM     = defaultRestoreM   unStMT
 
+instance MonadIO m => MonadLogger (DBMT v m) where
+  monadLoggerLog loc level msg = do
+    logger <- gets _dbmLogger
+    date <- liftIO $ loggerDate logger
+    let (row, col) = loc_start loc
+    liftIO $ loggerPutStr logger
+      [ toLogStr date, LB " "
+      , toLogStr (loc_module loc), LB ":"
+      , LS (show row), LB ":", LS (show col), LB ": "
+      , LB "[", LS (show level), LB "]: "
+      , toLogStr msg
+      , LB "\n"
+      ]
+
 data DBMState v
   = DBMState
     { _dbmTable      :: TVar (HMS.HashMap S.ByteString v)
     , _dbmUpdates    :: TVar Int
     , _dbmLastUpdate :: TVar UTCTime
+    , _dbmLogger     :: Logger
     }
 
 liftSTM :: STM a -> DBMT v STM a
@@ -82,6 +102,7 @@ initDBMState =
     <$> newTVarIO HMS.empty
     <*> newTVarIO 0
     <*> (newTVarIO =<< getCurrentTime)
+    <*> mkLogger True stdout
 
 makeLens ''DBMState
 
