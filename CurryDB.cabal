@@ -13,6 +13,7 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:   Database.Curry
+                     Database.Curry.Binary
                      Database.Memcached
                      Database.Memcached.Commands
                      Database.Memcached.Server
@@ -49,7 +50,9 @@ library
                    , fast-logger >=0.3
                    , template-haskell
                    , system-filepath >=0.4.7
+                   , system-fileio >=0.3.10
                    , async >=2.0
+                   , binary >=0.6.1
 
   ghc-prof-options:  -prof -auto-all
 
