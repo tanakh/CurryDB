@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Database.Curry.Saver (
+module Database.Curry.Storage (
   saveThread,
   createNotifyer,
 
@@ -74,16 +74,18 @@ createTimer = do
 
 saveToFile :: (MonadIO m, Binary v) => DBMT v m ()
 saveToFile = do
-  $logInfo "save to file..."
   Config {..} <- access dbmConfig
-  let Just fname = configPath
-  tbl <- liftIO . readTVarIO =<< access dbmTable
-  err <- liftIO $ E.try $ atomicWriteFile fname tbl
-  case err of
-    Right _ ->
-      return ()
-    Left ioerr ->
-      $logError $ "save error: " <> (T.pack $ show $ (ioerr :: IOError))
+  case configPath of
+    Nothing -> return ()
+    Just fname -> do
+      $logInfo "save to file..."
+      tbl <- liftIO . readTVarIO =<< access dbmTable
+      err <- liftIO $ E.try $ atomicWriteFile fname tbl
+      case err of
+        Right _ ->
+          return ()
+        Left ioerr ->
+          $logError $ "save error: " <> (T.pack $ show $ (ioerr :: IOError))
 
 loadFromFile :: (MonadIO m, Binary v) => DBMT v m ()
 loadFromFile = do

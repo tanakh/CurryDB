@@ -25,7 +25,7 @@ import           System.Log.FastLogger
 
 import           Database.Curry.Binary        ()
 import           Database.Curry.Commands
-import           Database.Curry.Saver
+import           Database.Curry.Storage
 import           Database.Curry.Types
 
 initDBMState :: Config -> STM () -> IO (DBMState v)

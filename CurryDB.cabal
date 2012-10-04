@@ -15,7 +15,7 @@ library
   exposed-modules:   Database.Curry
                      Database.Curry.Binary
                      Database.Curry.Commands
-                     Database.Curry.Saver
+                     Database.Curry.Storage
                      Database.Curry.Types
                      Database.Memcached
                      Database.Memcached.Commands
