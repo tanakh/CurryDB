@@ -145,23 +145,25 @@ initDBMState conf upd =
 runDBMT :: (MonadIO m, MonadBaseControl IO m, Binary v)
            => Config -> DBMT v m a -> m a
 runDBMT conf m = do
-  (upd, saveReq) <- liftIO $ createNotifyer $ configSaveStrategy conf
+  (upd, reset, saveReq) <- liftIO $ createNotifyer $ configSaveStrategy conf
   st <- liftIO $ initDBMState conf upd
   (`evalStateT` st) $ runIdentityT $ unDBMT $ control $ \run -> do
-    _ <- async $ run $ saveThread saveReq
+    _ <- async $ run $ saveThread saveReq reset
     run m
 
 -----
 
-saveThread :: (Functor m, MonadIO m, Binary v) => TVar Bool -> DBMT v m ()
-saveThread saveReq = forever $ do
+saveThread :: (Functor m, MonadIO m, Binary v)
+              => TVar Bool -> STM () -> DBMT v m ()
+saveThread saveReq reset = forever $ do
   liftIO $ atomically $ do
     req <- readTVar saveReq
     when (not req) retry
     writeTVar saveReq False
+    reset
   saveToFile
 
-createNotifyer :: [SaveStrategy] -> IO (STM (), TVar Bool)
+createNotifyer :: [SaveStrategy] -> IO (STM (), STM (), TVar Bool)
 createNotifyer strats = do
   timer   <- createTimer
   saveReq <- newTVarIO False
@@ -180,7 +182,9 @@ createNotifyer strats = do
 
   upds <- mapM notify strats
   let upd = mapM_ (\tv -> modifyTVar' tv (+1)) upds
-  return (upd, saveReq)
+      reset = mapM_ (\tv -> writeTVar tv 0) upds
+
+  return (upd, reset, saveReq)
 
 createTimer :: IO (TVar UTCTime)
 createTimer = do
