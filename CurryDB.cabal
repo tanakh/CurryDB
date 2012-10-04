@@ -14,6 +14,9 @@ cabal-version:       >=1.8
 library
   exposed-modules:   Database.Curry
                      Database.Curry.Binary
+                     Database.Curry.Commands
+                     Database.Curry.Saver
+                     Database.Curry.Types
                      Database.Memcached
                      Database.Memcached.Commands
                      Database.Memcached.Server
