@@ -34,6 +34,7 @@ import           Control.Concurrent           (forkIO, threadDelay)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Control.Exception            as E
+import qualified Control.Exception.Lifted     as EL
 import           Control.Monad
 import           Control.Monad.Base
 import           Control.Monad.Logger
@@ -94,9 +95,8 @@ instance MonadIO m => MonadLogger (DBMT v m) where
     let (row, col) = loc_start loc
     liftIO $ loggerPutStr logger
       [ toLogStr date, LB " "
-      , toLogStr (loc_module loc), LB ":"
-      , LS (show row), LB ":", LS (show col), LB ": "
-      , LB "[", LS (show level), LB "]: "
+      , LB "[", LS (show level), LB "] "
+      , toLogStr (loc_module loc), LB ":", LS (show row), LB ":", LS (show col), LB ": "
       , toLogStr msg
       , LB "\n"
       ]
@@ -152,7 +152,7 @@ runDBMT conf m = do
     loadFromFile
     control $ \run -> do
       _ <- async $ run $ saveThread saveReq reset
-      run m
+      run (m `EL.finally` saveToFile)
 
 -----
 
@@ -218,16 +218,15 @@ loadFromFile = do
     Nothing -> return ()
     Just path -> do
       $logInfo "load from file..."
-      etbl <- liftIO $ E.try $ decode . L.fromChunks . (\x -> [x]) <$> FS.readFile path
+      etbl <- liftIO $ E.try $ do
+        v <- decode . L.fromChunks . (\x -> [x]) <$> FS.readFile path
+        E.evaluate v
       case etbl of
         Right tbl -> do
           tv <- access dbmTable
           liftIO $ atomically $ writeTVar tv tbl
         Left err -> do
-          $logInfo $ "fail to load " <> ": " <> (T.pack $ show (err :: IOError))
-  where
-    ee (Left  e) = e
-    ee (Right e) = e
+          $logInfo $ "fail to load " <> ": " <> (T.pack $ show (err :: E.SomeException))
 
 -- FIXME: move to utils
 atomicWriteFile :: Binary b => FP.FilePath -> b -> IO ()

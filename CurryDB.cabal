@@ -53,6 +53,7 @@ library
                    , system-fileio >=0.3.10
                    , async >=2.0
                    , binary >=0.6.1
+                   , lifted-base >=0.1.2
 
   ghc-prof-options:  -prof -auto-all
 
