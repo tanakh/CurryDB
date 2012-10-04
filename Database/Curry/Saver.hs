@@ -94,7 +94,7 @@ loadFromFile = do
       $logInfo "load from file..."
       etbl <- liftIO $ E.try $ do
         v <- decode . L.fromChunks . (\x -> [x]) <$> FS.readFile path
-        E.evaluate v
+        E.evaluate v -- force and raise exception when data is corrupted.
       case etbl of
         Right tbl -> do
           tv <- access dbmTable
