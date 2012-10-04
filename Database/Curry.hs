@@ -52,7 +52,7 @@ import           Data.Monoid
 import qualified Data.Text                    as T
 import           Data.Time
 import qualified Filesystem                   as FS
-import qualified Filesystem.Path              as FP
+import qualified Filesystem.Path.CurrentOS    as FP
 import           Language.Haskell.TH.Syntax   (Loc (..))
 import           System.IO
 import           System.Log.FastLogger
@@ -147,9 +147,11 @@ runDBMT :: (MonadIO m, MonadBaseControl IO m, Binary v)
 runDBMT conf m = do
   (upd, reset, saveReq) <- liftIO $ createNotifyer $ configSaveStrategy conf
   st <- liftIO $ initDBMState conf upd
-  (`evalStateT` st) $ runIdentityT $ unDBMT $ control $ \run -> do
-    _ <- async $ run $ saveThread saveReq reset
-    run m
+  (`evalStateT` st) $ runIdentityT $ unDBMT $ do
+    loadFromFile
+    control $ \run -> do
+      _ <- async $ run $ saveThread saveReq reset
+      run m
 
 -----
 
@@ -207,6 +209,24 @@ saveToFile = do
       return ()
     Left ioerr ->
       $logError $ "save error: " <> (T.pack $ show $ (ioerr :: IOError))
+
+loadFromFile :: (MonadIO m, Binary v) => DBMT v m ()
+loadFromFile = do
+  Config {..} <- access dbmConfig
+  case configPath of
+    Nothing -> return ()
+    Just path -> do
+      $logInfo "load from file..."
+      etbl <- liftIO $ E.try $ decode . L.fromChunks . (\x -> [x]) <$> FS.readFile path
+      case etbl of
+        Right tbl -> do
+          tv <- access dbmTable
+          liftIO $ atomically $ writeTVar tv tbl
+        Left err -> do
+          $logInfo $ "fail to load " <> ee (FP.toText path) <> ": " <> (T.pack $ show (err :: IOError))
+  where
+    ee (Left  e) = e
+    ee (Right e) = e
 
 -- FIXME: move to utils
 atomicWriteFile :: Binary b => FP.FilePath -> b -> IO ()
