@@ -25,6 +25,7 @@ module Database.Curry (
   lookup, lookupDefault,
   keys,
 
+  -- Exec transaction
   transaction,
   ) where
 
@@ -223,7 +224,7 @@ loadFromFile = do
           tv <- access dbmTable
           liftIO $ atomically $ writeTVar tv tbl
         Left err -> do
-          $logInfo $ "fail to load " <> ee (FP.toText path) <> ": " <> (T.pack $ show (err :: IOError))
+          $logInfo $ "fail to load " <> ": " <> (T.pack $ show (err :: IOError))
   where
     ee (Left  e) = e
     ee (Right e) = e
