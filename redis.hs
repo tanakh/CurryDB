@@ -17,4 +17,4 @@ config = def
 main :: IO ()
 main = do
   forkServer "localhost" 8000
-  runServer config $ ServerSettings 8854 "*"
+  runServer config $ serverSettings 8854 "*"

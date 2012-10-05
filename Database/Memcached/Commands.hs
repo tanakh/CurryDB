@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings, TupleSections #-}
 
 module Database.Memcached.Commands (
+  MemcachedT,
+
   Command(..),
   Response(..),
   Error(..),
@@ -27,6 +29,8 @@ import Data.Maybe
 import Database.Curry as Curry
 
 -- protocol: <https://github.com/memcached/memcached/blob/master/doc/protocol.txt>
+
+type MemcachedT m = DBMT S.ByteString m
 
 data Command
     -- Storage
@@ -132,7 +136,7 @@ crlf = "\r\n"
 
 -----
 
-execCommand :: Command -> DBMT S.ByteString IO Response
+execCommand :: Command -> MemcachedT IO Response
 execCommand req = transaction $ case req of
   Set key _flags _exptime val -> do
     Curry.insert key val

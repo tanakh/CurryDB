@@ -47,7 +47,7 @@ library
                    , blaze-builder >=0.3
                    , blaze-textual
                    , network >=2.4
-                   , network-conduit
+                   , network-conduit >=0.6
                    , data-default >=0.5
                    , monad-logger >=0.2
                    , fast-logger >=0.3
