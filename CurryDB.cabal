@@ -58,7 +58,7 @@ library
                    , binary >=0.6.1
                    , lifted-base >=0.1.2
 
-  ghc-prof-options:  -prof -auto-all
+  ghc-prof-options:  -auto-all
 
 executable curry-memcached
   hs-source-dirs:      dist
@@ -87,7 +87,8 @@ benchmark curry-bench
   type:                exitcode-stdio-1.0
   hs-source-dirs:      dist
   main-is:             ../bench.hs
-  ghc-options:         -rtsopts -O2 -fllvm -prof -auto-all
+  ghc-options:         -rtsopts -O2 -fllvm
+  ghc-prof-options:    -auto-all
   build-depends:       base
                      , bytestring
                      , mtl >=2.1
