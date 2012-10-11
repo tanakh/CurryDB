@@ -73,6 +73,8 @@ executable curry-redis
   ghc-options:         -O3
   build-depends:       base
                      , network-conduit
+                     , system-filepath
+                     , optparse-applicative
                      , ekg >=0.3.1
                      , CurryDB
 
