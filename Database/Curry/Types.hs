@@ -51,6 +51,7 @@ newtype DBMT_ m a =
   DBMT_ { unDBMT :: IdentityT m a }
   deriving
     ( Functor, Applicative, Monad
+    , Alternative
     , MonadIO, MonadTrans, MonadBase b
     , MonadThrow, MonadResource
     )

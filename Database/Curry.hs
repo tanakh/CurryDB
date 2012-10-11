@@ -36,6 +36,7 @@ initDBMState conf upd =
     <*> mkLogger True stdout
     <*> pure conf
 
+-- | Run 'DBMT' monad.
 runDBMT :: (MonadIO m, MonadBaseControl IO m, Binary v)
            => Config -> DBMT v m a -> m a
 runDBMT conf m = do

@@ -1,3 +1,8 @@
+
+main :: IO ()
+main = return ()
+
+{-
 import Control.Applicative
 import           Control.Monad
 import           Control.Monad.Trans
@@ -7,8 +12,6 @@ import Data.Char
 import System.Random.Mersenne.Pure64
 import System.IO.Unsafe
 import Data.IORef
-
-import           Database.KVS
 
 ior :: IORef PureMT
 ior = unsafePerformIO $ newIORef =<< newPureMT
@@ -33,3 +36,4 @@ main = runDBMT $ do
       writeIORef ior mt3
       return (key, val)
     insert (S.pack key) (S.pack val)
+-}
