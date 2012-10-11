@@ -98,10 +98,13 @@ main = hspec $ do
         transaction $ do
           insertWith (+) "foo" 456
           insertWith subtract "bar" 123
+          insert "baz" 789
           lift mzero
           <|> return ()
         v1 <- transaction $ lookup "foo"
         liftIO $ v1 `shouldBe` Just 123
         v2 <- transaction $ lookup "bar"
         liftIO $ v2 `shouldBe` Just 456
+        v3 <- transaction $ lookup "baz"
+        liftIO $ v3 `shouldBe` Nothing
       return () :: IO ()
