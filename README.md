@@ -51,7 +51,7 @@ such as
 and [finger trees](http://en.wikipedia.org/wiki/Finger_tree).
 
 It enables simple concurrent implementation and get rid of *any*
-troublesome rocks. The code is fully concurrent.
+troublesome locks. The code is fully concurrent.
 
 ## Transactional
 
