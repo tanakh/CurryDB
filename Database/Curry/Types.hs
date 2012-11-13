@@ -33,16 +33,14 @@ import           Control.Monad.Logger
 import           Control.Monad.State.Strict
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
-import qualified Data.ByteString              as S
 import           Data.Conduit
 import           Data.Default
-import qualified Data.HashMap.Strict          as HMS
 import           Data.Lens.Template
 import qualified Filesystem.Path.CurrentOS    as FP
 import           Language.Haskell.TH.Syntax   (Loc (..))
 import           System.Log.FastLogger
 
-import           Database.Curry.Binary        ()
+import           Database.Curry.HashMap
 
 type DBMT v m = DBMT_ (StateT (DBMState v) m)
 type DBMS v = DBMT v STM
@@ -86,7 +84,7 @@ instance MonadIO m => MonadLogger (DBMT v m) where
 
 data DBMState v
   = DBMState
-    { _dbmTable  :: TVar (HMS.HashMap S.ByteString v)
+    { _dbmTable  :: HashMap v
     , _dbmUpdate :: STM ()
     , _dbmLogger :: Logger
     , _dbmConfig :: Config

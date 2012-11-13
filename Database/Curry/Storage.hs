@@ -10,7 +10,6 @@ module Database.Curry.Storage (
   loadFromFile,
   ) where
 
-import           Control.Applicative
 import           Control.Concurrent         (forkIO, threadDelay)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
@@ -27,7 +26,7 @@ import qualified Filesystem                 as FS
 import qualified Filesystem.Path.CurrentOS  as FP
 import           System.IO
 
-import           Database.Curry.Binary      ()
+import           Database.Curry.HashMap as HM
 import           Database.Curry.Types
 
 saveThread :: (Functor m, MonadIO m, Binary v)
@@ -47,7 +46,7 @@ createNotifyer strats = do
 
   let notify (SaveByFrequency {..})= do
         upd <- newTVarIO 0
-        forkIO $ forever $ do
+        _ <- forkIO $ forever $ do
           start <- readTVarIO timer
           atomically $ do
             cur <- readTVar timer
@@ -77,10 +76,9 @@ saveToFile = do
   Config {..} <- access dbmConfig
   case configPath of
     Nothing -> return ()
-    Just fname -> do
+    Just path -> do
       $logInfo "save to file..."
-      tbl <- liftIO . readTVarIO =<< access dbmTable
-      err <- liftIO $ E.try $ atomicWriteFile fname tbl
+      err <- liftIO . E.try . HM.save path =<< access dbmTable
       case err of
         Right _ ->
           return ()
@@ -94,20 +92,9 @@ loadFromFile = do
     Nothing -> return ()
     Just path -> do
       $logInfo "load from file..."
-      etbl <- liftIO $ E.try $ do
-        v <- decode . L.fromChunks . (\x -> [x]) <$> FS.readFile path
-        E.evaluate v -- force and raise exception when data is corrupted.
-      case etbl of
-        Right tbl -> do
-          tv <- access dbmTable
-          liftIO $ atomically $ writeTVar tv tbl
+      tbl <- access dbmTable
+      res <- liftIO . E.try . HM.load path =<< access dbmTable
+      case res of
+        Right () -> return ()
         Left err -> do
           $logInfo $ "fail to load " <> ": " <> (T.pack $ show (err :: E.SomeException))
-
-atomicWriteFile :: Binary b => FP.FilePath -> b -> IO ()
-atomicWriteFile path b = do
-  let tmpPath = path FP.<.> "tmp"
-  FS.withFile tmpPath WriteMode $ \h ->
-    L.hPut h $ encode b
-  -- rename operation is atomic
-  FS.rename tmpPath path

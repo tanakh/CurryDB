@@ -5,7 +5,7 @@ module Database.Curry.Commands (
   insert,
   insertWith,
   delete,
-  Database.Curry.Commands.lookup,
+  lookup,
   lookupDefault,
   keys,
 
@@ -20,50 +20,47 @@ import           Control.Monad.Trans.Identity
 import qualified Data.ByteString              as S
 import           Data.Conduit
 import           Data.Default
-import qualified Data.HashMap.Strict          as HMS
 import           Data.Lens
 import           Data.Maybe
 
+import qualified Database.Curry.HashMap       as HM
 import           Database.Curry.Types
+
+import           Prelude                      hiding (lookup)
 
 insert :: S.ByteString -> v -> DBMS v ()
 insert !key !val = do
-  table <- access dbmTable
-  liftSTM $ modifyTVar' table $ HMS.insert key val
+  liftSTM . HM.insert key val =<< access dbmTable
   update
 {-# INLINE insert #-}
 
 insertWith :: (v -> v -> v) -> S.ByteString -> v -> DBMS v ()
 insertWith !f !key !val = do
-  htvar <- access dbmTable
-  liftSTM $ modifyTVar' htvar $ HMS.insertWith f key val
+  liftSTM . HM.insertWith f key val =<< access dbmTable
   update
 {-# INLINE insertWith #-}
 
 delete :: S.ByteString -> DBMS v ()
 delete !key = do
-  htvar <- access dbmTable
-  liftSTM $ modifyTVar' htvar $ HMS.delete key
+  liftSTM . HM.delete key =<< access dbmTable
   update
 {-# INLINE delete #-}
 
 lookup :: S.ByteString -> DBMS v (Maybe v)
 lookup !key = do
-  htvar <- access dbmTable
-  liftSTM $ HMS.lookup key <$> readTVar htvar
+  ht <- access dbmTable
+  liftSTM $ HM.lookup key ht
 {-# INLINE lookup #-}
 
 lookupDefault :: Default v => S.ByteString -> DBMS v v
-lookupDefault !key = do
-  htvar <- access dbmTable
-  liftSTM $ fromMaybe def . HMS.lookup key <$> readTVar htvar
+lookupDefault !key = fromMaybe def <$> lookup key
 {-# INLINE lookupDefault #-}
 
 keys :: Monad m => DBMS v (Source (DBMT v m) S.ByteString)
 keys = do
-  htvar <- access dbmTable
-  ht <- liftSTM $ readTVar htvar
-  return $ mapM_ yield $ HMS.keys ht
+  ht <- access dbmTable
+  ks <- liftSTM $ HM.keys ht
+  return $ mapM_ yield ks
 {-# INLINE keys #-}
 
 update ::DBMS v ()

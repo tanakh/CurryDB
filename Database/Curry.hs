@@ -19,19 +19,18 @@ import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
 import           Data.Binary
 import           Data.Default
-import qualified Data.HashMap.Strict          as HMS
 import           System.IO
 import           System.Log.FastLogger
 
-import           Database.Curry.Binary        ()
 import           Database.Curry.Commands
+import qualified Database.Curry.HashMap as HM
 import           Database.Curry.Storage
 import           Database.Curry.Types
 
 initDBMState :: Config -> STM () -> IO (DBMState v)
 initDBMState conf upd =
   DBMState
-    <$> newTVarIO HMS.empty
+    <$> HM.new
     <*> pure upd
     <*> mkLogger True stdout
     <*> pure conf

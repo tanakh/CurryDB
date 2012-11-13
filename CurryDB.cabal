@@ -19,6 +19,7 @@ library
   exposed-modules:   Database.Curry
                      Database.Curry.Binary
                      Database.Curry.Commands
+                     Database.Curry.HashMap
                      Database.Curry.Storage
                      Database.Curry.Types
                      Database.Memcached
@@ -59,7 +60,7 @@ library
                    , system-filepath >=0.4.7
                    , system-fileio >=0.3.10
                    , async >=2.0
-                   , binary >=0.6.1
+                   , binary >=0.5
                    , lifted-base >=0.2
 
   ghc-prof-options:  -auto-all
@@ -79,7 +80,7 @@ executable curry-redis
                      , network-conduit
                      , system-filepath
                      , optparse-applicative
-                     , ekg >=0.3.1
+--                      , ekg >=0.3.1
                      , CurryDB
 
 test-suite doctests
