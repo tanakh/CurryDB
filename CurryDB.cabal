@@ -62,6 +62,8 @@ library
                    , async >=2.0
                    , binary >=0.5
                    , lifted-base >=0.2
+                   , hashable
+                   , array
 
   ghc-prof-options:  -auto-all
 
