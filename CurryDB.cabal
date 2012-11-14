@@ -103,6 +103,7 @@ test-suite hspec
                      , mtl
                      , stm
                      , conduit
+                     , lifted-base
                      , CurryDB
 
 benchmark curry-bench

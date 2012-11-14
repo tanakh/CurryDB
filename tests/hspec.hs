@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Control.Applicative
+import           Control.Concurrent.Chan.Lifted
+import           Control.Concurrent.Lifted
 import           Control.Monad
 import           Control.Monad.Trans
 import           Data.Conduit
-import qualified Data.Conduit.List   as CL
-import           Data.List (sort)
+import qualified Data.Conduit.List              as CL
+import           Data.List                      (sort)
 
 import           Test.Hspec
 -- import Test.QuickCheck
@@ -13,7 +15,7 @@ import           Test.Hspec
 
 import           Database.Curry
 
-import           Prelude             hiding (lookup)
+import           Prelude                        hiding (lookup)
 
 main :: IO ()
 main = hspec $ do
@@ -107,4 +109,17 @@ main = hspec $ do
         liftIO $ v2 `shouldBe` Just 456
         v3 <- transaction $ lookup "baz"
         liftIO $ v3 `shouldBe` Nothing
+      return () :: IO ()
+
+  describe "concurrent support" $ do
+    it "does not race" $ do
+      runDBMT def $ do
+        chan <- newChan
+        replicateM_ 10 $ fork $ do
+          replicateM_ 10000 $ do
+            transaction $ insertWith (+) "foo" (1 :: Int)
+          writeChan chan ()
+        replicateM_ 10 $ readChan chan
+        cnt <- transaction $ lookupDefault "foo"
+        liftIO $ cnt `shouldBe` 100000
       return () :: IO ()

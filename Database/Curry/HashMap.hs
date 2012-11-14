@@ -67,14 +67,14 @@ insertWith :: (v -> v -> v) -> Key -> v -> HashMap v -> STM ()
 insertWith f k v hm = do
   let bix = bucketIx k
   bkt <- MA.readArray (unHM hm) bix
-  MA.writeArray (unHM hm) bix $ HMS.insertWith f k v bkt
+  MA.writeArray (unHM hm) bix $! HMS.insertWith f k v bkt
 {-# INLINE insertWith #-}
 
 delete :: Key -> HashMap v -> STM ()
 delete k hm = do
   let bix = bucketIx k
   bkt <- MA.readArray (unHM hm) bix
-  MA.writeArray (unHM hm) bix $ HMS.delete k bkt
+  MA.writeArray (unHM hm) bix $! HMS.delete k bkt
 {-# INLINE delete #-}
 
 lookup :: Key -> HashMap v -> STM (Maybe v)
