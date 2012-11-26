@@ -14,19 +14,15 @@ import           Control.Concurrent         (forkIO, threadDelay)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Control.Exception          as E
+import           Control.Lens
 import           Control.Monad.Logger
 import           Control.Monad.State.Strict
 import           Data.Binary
-import qualified Data.ByteString.Lazy       as L
-import           Data.Lens
 import           Data.Monoid
 import qualified Data.Text                  as T
 import           Data.Time
-import qualified Filesystem                 as FS
-import qualified Filesystem.Path.CurrentOS  as FP
-import           System.IO
 
-import           Database.Curry.HashMap as HM
+import           Database.Curry.HashMap     as HM
 import           Database.Curry.Types
 
 saveThread :: (Functor m, MonadIO m, Binary v)
@@ -73,12 +69,12 @@ createTimer = do
 
 saveToFile :: (MonadIO m, Binary v) => DBMT v m ()
 saveToFile = do
-  Config {..} <- access dbmConfig
+  Config {..} <- use dbmConfig
   case configPath of
     Nothing -> return ()
     Just path -> do
       $logInfo "save to file..."
-      err <- liftIO . E.try . HM.save path =<< access dbmTable
+      err <- liftIO . E.try . HM.save path =<< use dbmTable
       case err of
         Right _ ->
           return ()
@@ -87,13 +83,13 @@ saveToFile = do
 
 loadFromFile :: (MonadIO m, Binary v) => DBMT v m ()
 loadFromFile = do
-  Config {..} <- access dbmConfig
+  Config {..} <- use dbmConfig
   case configPath of
     Nothing -> return ()
     Just path -> do
       $logInfo "load from file..."
-      tbl <- access dbmTable
-      res <- liftIO . E.try . HM.load path =<< access dbmTable
+      tbl <- use dbmTable
+      res <- liftIO . E.try . HM.load path =<< use dbmTable
       case res of
         Right () -> return ()
         Left err -> do

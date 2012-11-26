@@ -27,6 +27,7 @@ module Database.Curry.Types (
 
 import           Control.Applicative
 import           Control.Concurrent.STM
+import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Base
 import           Control.Monad.Logger
@@ -35,7 +36,6 @@ import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Identity
 import           Data.Conduit
 import           Data.Default
-import           Data.Lens.Template
 import qualified Filesystem.Path.CurrentOS    as FP
 import           Language.Haskell.TH.Syntax   (Loc (..))
 import           System.Log.FastLogger
@@ -103,7 +103,7 @@ data SaveStrategy
     , freqUpdates :: Int
     }
 
-makeLens ''DBMState
+makeLenses ''DBMState
 
 instance Default Config where
   def = Config

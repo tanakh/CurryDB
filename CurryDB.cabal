@@ -39,9 +39,7 @@ library
                    , transformers-base >=0.4
                    , unordered-containers >=0.2.2
                    , containers >=0.4
-                   , data-lens >= 2.10
-                   , data-lens-fd >= 2.0
-                   , data-lens-template >= 2.1
+                   , lens >=3.6
                    , conduit >=0.5
                    , time
                    , stm >=2.4
