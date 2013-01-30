@@ -1,5 +1,5 @@
 name:                CurryDB
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            CurryDB: In-memory Key/Value Database
 description:         CurryDB: Simple, Persistent, Polymorphic, Transactional, In-memory Key/Value Database
 license:             BSD3
